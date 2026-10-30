@@ -556,6 +556,16 @@ namespace GRFEditor.ApplicationConfiguration {
 			set => ConfigAsker["[GRFEditor - PreviewActShowGrid]"] = value.ToString();
 		}
 
+		public static bool PreviewActShowCharacter {
+			get => Boolean.Parse(ConfigAsker["[GRFEditor - PreviewActShowCharacter]", true.ToString()]);
+			set => ConfigAsker["[GRFEditor - PreviewActShowCharacter]"] = value.ToString();
+		}
+
+		public static int PreviewActCharacterGender {
+			get => Int32.Parse(ConfigAsker["[GRFEditor - PreviewActCharacterGender]", "0"]);
+			set => ConfigAsker["[GRFEditor - PreviewActCharacterGender]"] = value.ToString();
+		}
+
 		public static bool MapRendererGlobalLighting {
 			get => Boolean.Parse(ConfigAsker["[GRFEditor - MapRendererGlobalLighting]", true.ToString()]);
 			set => ConfigAsker["[GRFEditor - MapRendererGlobalLighting]"] = value.ToString();

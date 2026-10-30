@@ -485,3 +485,4 @@ $RECYCLE.BIN/
 /GRF/Patcher
 /Encryption
 /Libraries/update libraries.bat
+/GRFEditor/Files/Compressed/*.dll

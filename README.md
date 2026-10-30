@@ -1,82 +1,56 @@
-# GRFEditor
-An editor for the GRF/GPF/Thor file formats from Ragnarok Online.
+# Ragnarok GRF Editor
 
-### Using the GRF library
-#### Setting up the ErrorHandler
-With a new project, the first thing you'll want to do is look into the ErrorHandler.
-By default, the ErrorHandler is set to use ErrorManager.DefaultHandler which uses the Console window and may not be very helpful.
-GRF Editor uses GrfToWpfBridge.Application.DefaultErrorHandler which uses a WPF based interface.
-If you want to handle the exceptions yourself, you can simply rethrow them with the RethrowErrorHandler shown below (or make your own).
-```
-public class RethrowErrorHandler : IErrorHandler {
-	public void Handle(Exception exception, ErrorLevel errorLevel) {
-		throw exception;
-	}
+GRF Editor pour Ragnarok Online, avec un personnage de référence dans **Animation preview** pour voir directement le rendu des hats portés.
 
-	public bool YesNoRequest(string message, string caption) {
-		if (MessageBox.Show("The application requires your attention.\n\n" + message, caption, MessageBoxButtons.YesNo) == DialogResult.Yes)
-			return true;
+Version dérivée de [Tokeiburu/GRFEditor](https://github.com/Tokeiburu/GRFEditor). Les fonctions d’édition des archives GRF/GPF/Thor et l’historique du projet d’origine sont conservés.
 
-		return false;
-	}
-}
+## Télécharger
 
-public class GrfTest {
-	public GrfTest() {
-		ErrorHandler.SetErrorHandler(new DefaultHandler());
-		ErrorHandler.SetErrorHandler(new RethrowErrorHandler());
-		ErrorHandler.SetErrorHandler(new DefaultErrorHandler());
-	}
-}
-```
-#### Using GrfHolder
-The GrfHolder is the main class for handling GRF files. All operations on the GRF must be applied by using the Commands object. You can find all the available methods in GRF.ContainerFormat.Commands.CommandsHolder.cs.
-```
-// Add and remove files
-GrfHolder grf = new GrfHolder(@"C:\data.grf");
+Télécharger **[Ragnarok-GRF-Editor-v1.0.0.zip](https://github.com/AngeHell47/Ragnarok-GRF-Editor/releases/latest)** dans la dernière release, décompresser l’archive et lancer **GRF Editor.exe**. Conserver **GRF Editor.exe.config** à côté de l’exécutable.
 
-grf.Commands.AddFile(@"data\texture\grid.tga", @"C:\test\custom_grid.tga");
-grf.Commands.RemoveFile(@"data\texture\loading00.jpg");
+L’exécutable compilé est également disponible séparément dans les fichiers de la release. Les bibliothèques nécessaires et les personnages de référence sont intégrés à l’EXE.
 
-if (grf.Commands.CanUndo)
-	grf.Commands.Undo();
+Prérequis : **Windows et .NET Framework 4.8**.
 
-if (grf.Commands.CanRedo)
-	grf.Commands.Redo();
+## Preview des hats
 
-grf.QuickSave();
-// Reload is only necessary if you plan on using the GRF again after saving it.
-grf.Reload();
+1. Ouvrir un GRF et sélectionner un sprite dans la liste.
+2. Afficher l’onglet **Animation preview**.
+3. **Show character** affiche ou masque le personnage ; le choix est mémorisé.
+4. **Auto / Male / Female** sélectionne le personnage. Le mode Auto suit le dossier masculin ou féminin du sprite.
+5. Utiliser les directions et les animations habituelles pour examiner le hat.
+
+![Preview du hat Anya porté sur un personnage](docs/character-preview.png)
+
+Si le fichier sélectionné est un sprite d’objet au sol, la preview recherche automatiquement sa version portée dans le GRF ouvert. Cela évite d’afficher une icône centrée sur le corps : par exemple, `anya_wig_xmas.act` possède une image d’objet au sol et des animations portées distinctes.
+
+L’en-tête indique **(worn preview)** lorsque cette version portée est utilisée. Masquer le personnage rétablit l’animation du fichier sélectionné. La preview ne modifie pas les ACT, les SPR ou le GRF. La version portée doit être présente dans le GRF ouvert pour que la correspondance automatique fonctionne.
+
+## Compiler
+
+Prérequis : Visual Studio ou Build Tools avec MSBuild, les outils WPF/.NET Framework 4.8 et le SDK .NET nécessaire aux bibliothèques .NET Standard du projet.
+
+```powershell
+.\Build-CharacterPreview.ps1
 ```
 
-The entries from the GRF are stored in the FileTable object and can be extracted as follows:
-```
-GrfHolder grf = new GrfHolder(@"C:\data.grf");
+Le résultat se trouve dans **GRFEditor/bin/CharacterPreview**. Distribuer **GRF Editor.exe** et **GRF Editor.exe.config**. Le script incorpore les dépendances compressées dans l’exécutable.
 
-var entry = grf.FileTable.TryGet(@"data\texture\grid.tga");
+Le script compile directement le projet de l’application : la solution publique référence un projet Encryption non distribué, dont la DLL est fournie dans `Libraries`.
 
-if (entry == null)
-	throw new Exception("Entry not found.");
+## Validation
 
-// You can also get the entry directly as follow
-entry = grf.FileTable[@"data\texture\grid.tga"];
+- Compilation Release et démarrage de l’exécutable autonome.
+- 20 hats réels, deux personnages, 55 432 frames de référence vérifiées.
+- Rendu WPF de toutes les actions et frames d’Anya, changement de sexe, affichage/masquage et mémorisation du réglage.
+- Vérification que les ACT et l’entrée GRF d’origine restent identiques.
 
-var data = entry.GetDecompressedData();
+Les tests d’intégration sont dans [Tests/CharacterPreview](Tests/CharacterPreview/README.md). Ils utilisent un GRF local fourni par la personne qui les lance ; les costumes ne sont pas inclus dans le dépôt.
 
-File.WriteAllBytes(@"C:\test\custom_grid.tga", data);
-```
+## Crédits
 
-You can also iterate through a specific folder in the GRF.
-```
-GrfHolder grf = new GrfHolder(@"C:\data.grf");
+- **Tokeiburu** et les contributeurs de [GRFEditor](https://github.com/Tokeiburu/GRFEditor) pour l’application d’origine et ses bibliothèques.
+- [Tokeiburu/ActEditor](https://github.com/Tokeiburu/ActEditor) pour les ressources de corps et de tête de référence.
+- Cette version ajoute la preview sur personnage, le masquage, le choix du sexe et la recherche automatique du sprite porté.
 
-foreach (var entry in grf.FileTable.EntriesInDirectory(@"C:\texture", SearchOption.TopDirectoryOnly)) {
-	if (entry.RelativePath.IsExtension(".bmp")) {
-		// Using GrfImage requires additional configuration, more on that later.
-		GrfImage image = new GrfImage(entry);
-
-		image.Convert(GrfImageType.Bgra32);
-		image.Save(GrfPath.Combine(@"C:\test\", entry.RelativePath));
-	}
-}
-```
+Voir [les détails techniques](CHARACTER-PREVIEW.md) et [la documentation d’origine de la bibliothèque GRF](docs/UPSTREAM-GRF-LIBRARY.md).

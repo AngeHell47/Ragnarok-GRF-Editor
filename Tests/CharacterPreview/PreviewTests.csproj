@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PreviewBuild>CharacterPreview</PreviewBuild>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="GRF Editor"><HintPath>../../GRFEditor/bin/$(PreviewBuild)/GRF Editor.exe</HintPath></Reference>
+    <Reference Include="GRF"><HintPath>../../GRFEditor/bin/$(PreviewBuild)/GRF.dll</HintPath></Reference>
+    <Reference Include="Utilities"><HintPath>../../GRFEditor/bin/$(PreviewBuild)/Utilities.dll</HintPath></Reference>
+    <Reference Include="TokeiLibrary"><HintPath>../../GRFEditor/bin/$(PreviewBuild)/TokeiLibrary.dll</HintPath></Reference>
+    <Reference Include="GrfToWpfBridge"><HintPath>../../GRFEditor/bin/$(PreviewBuild)/GrfToWpfBridge.dll</HintPath></Reference>
+    <Reference Include="ErrorManager"><HintPath>../../GRFEditor/bin/$(PreviewBuild)/ErrorManager.dll</HintPath></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="../../GRFEditor/Resources/*.png" Link="Resources/%(Filename)%(Extension)" />
+    <None Include="../../GRFEditor/bin/$(PreviewBuild)/*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

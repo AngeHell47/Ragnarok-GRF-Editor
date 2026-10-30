@@ -40,6 +40,11 @@ namespace GRFEditor.WPF.PreviewTabs {
 
 		private FrameRendererEditor _editor = new FrameRendererEditor();
 		private FrameRendererConfiguration _config;
+		private PreviewCharacter _character;
+		private string _animationPath;
+		private Act _sourceAnimation;
+		private Act _maleEquipment;
+		private Act _femaleEquipment;
 
 		public class DefaultDrawModule : IDrawingModule {
 			private readonly Func<List<DrawingComponent>> _getComponents;
@@ -69,11 +74,18 @@ namespace GRFEditor.WPF.PreviewTabs {
 			_initializeEditor();
 			_bindSettings();
 
-			WpfUtilities.AddMouseInOutUnderline(_cbGrid);
+			WpfUtilities.AddMouseInOutUnderline(_cbGrid, _cbCharacter);
 			ErrorPanel = _errorPanel;
 		}
 
 		private void _bindSettings() {
+			_cbCharacterGender.SelectedIndex = Math.Max(0, Math.Min(2, GrfEditorConfiguration.PreviewActCharacterGender));
+			_cbCharacterGender.SelectionChanged += delegate {
+				GrfEditorConfiguration.PreviewActCharacterGender = _cbCharacterGender.SelectedIndex;
+				_character = null;
+				_updateCharacter();
+			};
+			Binder.Bind(_cbCharacter, () => GrfEditorConfiguration.PreviewActShowCharacter, v => GrfEditorConfiguration.PreviewActShowCharacter = v, _updateCharacter, true);
 			Binder.Bind(_indexSelector._buttonScale, () => GrfEditorConfiguration.PreviewActScaleType, v => GrfEditorConfiguration.PreviewActScaleType = v, delegate {
 				_indexSelector._buttonScale.IsPressed = GrfEditorConfiguration.PreviewActScaleType;
 				_config.ActEditorScalingMode.Set(GrfEditorConfiguration.PreviewActScaleType ? BitmapScalingMode.HighQuality : BitmapScalingMode.NearestNeighbor);
@@ -84,6 +96,48 @@ namespace GRFEditor.WPF.PreviewTabs {
 				_config.ActEditorGridLineVertical.Set(color);
 				_renderer.Update();
 			}, true);
+		}
+
+		private void _updateCharacter() {
+			_cbCharacterGender.IsEnabled = _cbCharacter.IsChecked == true;
+			bool female = _cbCharacterGender.SelectedIndex == 2 ||
+				(_cbCharacterGender.SelectedIndex == 0 && PreviewCharacter.IsFemalePath(_animationPath));
+			Act display = _sourceAnimation;
+			if (_cbCharacter.IsChecked == true)
+				display = (female ? _femaleEquipment ?? _maleEquipment : _maleEquipment ?? _femaleEquipment) ?? display;
+
+			if (!ReferenceEquals(display, _editor.Act)) {
+				int action = _editor.Act == null ? _editor.PreferedLoadingAction : _indexSelector.SelectedAction;
+				_indexSelector.Stop();
+				_editor.IsLoading = true;
+				try {
+					_editor.Act = display;
+					_character = null;
+					_editor.OnActLoaded();
+					_editor.IndexSelector.Init(_editor, action, 0);
+					if (display != null && IsVisible) _editor.IndexSelector.Play();
+				}
+				finally {
+					_editor.IsLoading = false;
+				}
+			}
+
+			if (_animationPath != null) {
+				bool worn = !ReferenceEquals(display, _sourceAnimation);
+				_labelHeader.Text = "Animation: " + System.IO.Path.GetFileName(_animationPath) + (worn ? " (worn preview)" : "");
+				_labelHeader.ToolTip = worn ? "Worn sprite: " + display.LoadedPath : null;
+			}
+
+			if (_cbCharacter.IsChecked == true && _editor.Act != null && _character == null) {
+				try {
+					_character = new PreviewCharacter(_editor.Act, female);
+				}
+				catch (Exception err) {
+					_cbCharacter.IsChecked = false;
+					ErrorHandler.HandleException("Unable to load the reference character.", err);
+				}
+			}
+			_renderer.Update();
 		}
 
 		private void _initializeEditor() {
@@ -99,7 +153,13 @@ namespace GRFEditor.WPF.PreviewTabs {
 
 			_renderer.DrawingModules.Add(new DefaultDrawModule(delegate {
 				if (_editor.Act != null) {
-					return new List<DrawingComponent> { new ActDraw(_editor.Act) };
+					var components = new List<DrawingComponent>();
+					if (_cbCharacter.IsChecked == true && _character != null) {
+						components.Add(new ActDraw(_character.Body));
+						components.Add(new ActDraw(_character.Head));
+					}
+					components.Add(new ActDraw(_editor.Act));
+					return components;
 				}
 
 				return new List<DrawingComponent>();
@@ -120,7 +180,11 @@ namespace GRFEditor.WPF.PreviewTabs {
 
 				if (_isCancelRequired()) return;
 
-				_setAnimation(new Act(actData, sprData));
+				var animation = new Act(actData, sprData);
+				var male = _tryLoadEquipment(entry, false);
+				var female = _tryLoadEquipment(entry, true);
+				if (_isCancelRequired()) return;
+				_setAnimation(animation, entry.RelativePath, male, female);
 			}
 			catch {
 				_setAnimation(null);
@@ -128,20 +192,31 @@ namespace GRFEditor.WPF.PreviewTabs {
 			}
 		}
 
-		private void _setAnimation(Act act) {
+		private Act _tryLoadEquipment(FileEntry entry, bool female) {
+			var equipped = PreviewCharacter.FindEquipment(_grfData, entry.RelativePath, female);
+			if (equipped == null) return null;
+			try {
+				if (!_tryLoadAct(equipped, out byte[] actData, out byte[] sprData)) return null;
+				var act = new Act(actData, sprData) { LoadedPath = equipped.RelativePath };
+				act.Safe();
+				return act;
+			}
+			catch {
+				// A missing/incomplete wearable must not prevent viewing the original file.
+				return null;
+			}
+		}
+
+		private void _setAnimation(Act act, string path = null, Act male = null, Act female = null) {
 			act?.Safe();
 
 			this.Dispatch(delegate {
-				_editor.IsLoading = true;
-				_editor.Act = act;
-				_editor.OnActLoaded();
-				_editor.IndexSelector.Init(_editor, _editor.PreferedLoadingAction, 0);
-				
-				if (act != null)
-					_editor.IndexSelector.Play();
-
-				_editor.FrameRenderer.Update();
-				_editor.IsLoading = false;
+				_sourceAnimation = act;
+				_maleEquipment = male;
+				_femaleEquipment = female;
+				_character = null;
+				_animationPath = path;
+				_updateCharacter();
 			});
 		}
 

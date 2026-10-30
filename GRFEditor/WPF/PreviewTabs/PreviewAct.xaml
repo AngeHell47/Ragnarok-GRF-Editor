@@ -21,6 +21,16 @@
             <WrapPanel>
 				<controls:PreviewActIndexSelector x:Name="_indexSelector" />
 				<CheckBox x:Name="_cbGrid" Margin="3" Content="Show grid" VerticalAlignment="Top" />
+				<StackPanel Orientation="Horizontal" Margin="3">
+					<CheckBox x:Name="_cbCharacter" Margin="0 3 6 3" Content="Show character" VerticalAlignment="Top"
+					          ToolTip="Show or hide the reference character. For item/drop sprites, use the matching wearable sprite when available in this GRF." />
+					<ComboBox x:Name="_cbCharacterGender" Width="90" VerticalAlignment="Top"
+					          ToolTip="Reference character. Auto follows the sprite's male/female folder.">
+						<ComboBoxItem Content="Auto" />
+						<ComboBoxItem Content="Male" />
+						<ComboBoxItem Content="Female" />
+					</ComboBox>
+				</StackPanel>
 			</WrapPanel>
             <Rectangle Margin="5" Stroke="{DynamicResource SeperatorBrush}" VerticalAlignment="Stretch" />
         </StackPanel>

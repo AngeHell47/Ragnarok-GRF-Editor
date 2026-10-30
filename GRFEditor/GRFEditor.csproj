@@ -81,6 +81,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ApplicationConfiguration\EditorPosition.cs" />
+    <Compile Include="WPF\PreviewTabs\PreviewCharacter.cs" />
     <Compile Include="ApplicationConfiguration\GrfEditorCommands.cs" />
     <Compile Include="ApplicationConfiguration\PathRequest.cs" />
     <Compile Include="ApplicationConfiguration\SelfPatcher.cs" />
@@ -623,8 +624,11 @@
     <None Include="app.manifest" />
     <AppDesigner Include="Properties\" />
     <EmbeddedResource Include="Resources\Lua.xshd" />
+    <EmbeddedResource Include="Resources\CharacterPreview\*.act" />
+    <EmbeddedResource Include="Resources\CharacterPreview\*.spr" />
     <EmbeddedResource Include="Resources\Imf.xshd" />
     <EmbeddedResource Include="Files\Compressed\default.pal" />
+    <EmbeddedResource Include="Files\Compressed\*.dll" />
     <EmbeddedResource Include="Resources\Json.xshd" />
     <EmbeddedResource Include="Resources\Shaders\map\gnd.frag" />
     <EmbeddedResource Include="Resources\Shaders\map\gnd.vert" />
@@ -915,7 +919,9 @@
     <Reference Include="ActImaging, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>$(LibDir)ActImaging.dll</HintPath>
     </Reference>
-    <Reference Include="Be.Windows.Forms.HexBox, Version=1.5.0.34411, Culture=neutral, PublicKeyToken=e0e5adf0ebc99863, processorArchitecture=MSIL" />
+    <Reference Include="Be.Windows.Forms.HexBox, Version=1.5.0.34411, Culture=neutral, PublicKeyToken=e0e5adf0ebc99863, processorArchitecture=MSIL">
+      <HintPath>$(LibDir)Be.Windows.Forms.HexBox.dll</HintPath>
+    </Reference>
     <Reference Include="ColorPicker, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>$(LibDir)ColorPicker.dll</HintPath>
     </Reference>
@@ -934,11 +940,11 @@
     </Reference>
     <Reference Include="OpenTK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(LibDir)OpenTK3.3\OpenTK.dll</HintPath>
+      <HintPath>$(LibDir)OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="OpenTK.GLControl, Version=2.0.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(LibDir)OpenTK\OpenTK.GLControl.dll</HintPath>
+      <HintPath>$(LibDir)OpenTK.GLControl.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -1057,7 +1063,7 @@
     <Message Text="Encryption -&gt; @(DebugEncryptionPathFiles)" Importance="High" Condition="Exists('$(ExternalDllsPath)')" />
     <Copy SourceFiles="@(DebugEncryptionPathFiles)" DestinationFolder="$(TargetDir)" Condition="Exists('$(DebugEncryptionPath)')" />
   </Target>
-  <Target Name="RunCompressBatch" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+  <Target Name="RunCompressBatch" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(SkipResourceCompression)' != 'true'">
     <Exec Command="&quot;$(ProjectDir)Files\_Compress.bat&quot;" WorkingDirectory="$(ProjectDir)Files" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
